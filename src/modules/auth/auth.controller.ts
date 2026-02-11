@@ -1,13 +1,46 @@
 import { Request, Response } from "express";
-import { signupSchema } from "./auth.validation";
+import { signupSchema, signinSchema } from "./auth.validation";
+import { signupService, signinService } from "./authService";
+import { getCustomizedError } from "../../utils/UtilityFunctions";
 
-export const signupController = (req: Request, res: Response) => {
+export const signupController = async (req: Request, res: Response) => {
   try {
     const data = signupSchema.parse(req.body);
-    res.status(201).json({ message: "User created successfully", data });
+
+    const result = await signupService(data);
+
+    if (result.data) {
+      return res.status(result.statusCode).json({
+        message: result.message,
+        user: result.data,
+      });
+    }
+
+    return res.status(result.statusCode).json({
+      message: result.message,
+    });
   } catch (error: any) {
-    res
-      .status(400)
-      .json({ error: "invalid request data", details: error.errors });
+    return getCustomizedError(error, res);
+  }
+};
+
+export const signinController = async (req: Request, res: Response) => {
+  try {
+    const data = signinSchema.parse(req.body);
+
+    const result = await signinService(data);
+
+    if (result.data) {
+      return res.status(result.statusCode).json({
+        message: result.message,
+        ...result.data,
+      });
+    }
+
+    return res.status(result.statusCode).json({
+      message: result.message,
+    });
+  } catch (error: any) {
+    return getCustomizedError(error, res);
   }
 };

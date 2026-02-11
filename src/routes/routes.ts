@@ -1,8 +1,9 @@
-import { Router } from "express";
 import authRouter from "../modules/auth/auth.route";
+import userRouter from "../modules/user/user.route";
 
-const router = Router();
+const routes = {
+  public: [{ endpoint: "/auth", router: authRouter }],
+  private: [{ endpoint: "/user", router: userRouter }],
+};
 
-router.use("/auth", authRouter);
-
-export default router;
+export default routes;
