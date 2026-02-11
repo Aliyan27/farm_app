@@ -18,7 +18,6 @@ export const changePasswordService = async (
     };
   }
 
-  // 2. Verify old password
   const isOldPasswordValid = await bcrypt.compare(
     data.oldPassword,
     user.password,
@@ -32,10 +31,8 @@ export const changePasswordService = async (
     };
   }
 
-  // 3. Hash new password (using modern cost)
   const hashedNewPassword = await bcrypt.hash(data.newPassword, 12);
 
-  // 4. Update password
   await prisma.user.update({
     where: { id: userId },
     data: { password: hashedNewPassword },
@@ -44,6 +41,6 @@ export const changePasswordService = async (
   return {
     statusCode: 200,
     message: "Password changed successfully",
-    data: null, // or { userId } if you want minimal confirmation data
+    data: null,
   };
 };
