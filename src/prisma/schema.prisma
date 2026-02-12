@@ -15,3 +15,42 @@ model user{
     role String @default("user")
     createdAt DateTime @default(now())
 }
+
+enum FarmUnit {
+  KAASI_19
+  MATITAL_I
+  MATITAL_II
+  COMBINED
+  OTHER
+}
+
+enum ExpenseCategory {
+  FEED
+  UTILITIES
+  RENT
+  POWER_ELECTRIC
+  TRANSPORT
+  LABOR
+  VETERINARY
+  MAINTENANCE
+  OFFICE
+  OTHER
+}
+
+model expense {
+  id          Int              @id @default(autoincrement())
+  date        DateTime
+  month       String?          //  "2025-12" format, can be computed
+  farm        FarmUnit
+  category    ExpenseCategory
+  challanId   String?          // Challan/Transaction ID
+  amount      Float            // total cost
+  costPerHead Float?           // computed or entered
+  description String?
+  createdBy   Int?             // relation to User if you want audit
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Optional relation if you track who entered it
+  // user        User?            @relation(fields: [createdBy], references: [id])
+}
