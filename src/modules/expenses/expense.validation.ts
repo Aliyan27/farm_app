@@ -1,56 +1,54 @@
+// expense.validation.ts
 import { z } from "zod";
 
+export const EXPENSE_HEADS = [
+  "CHICKEN",
+  "FEED",
+  "RENT",
+  "UTILITIES",
+  "PACKING_MATERIAL",
+  "TP",
+  "SALARIES_PAYMENTS",
+  "MESS",
+  "POWER_ELECTRIC",
+  "POL",
+  "MEDICINE",
+  "VACCINE",
+  "REPAIR_MAINTENANCE",
+  "TRAVELLING_LOGISTICS",
+  "OFFICE_EXPENSES",
+  "MEETING_REFRESHMENT",
+  "FURNITURE_FIXTURE",
+  "COMPUTER_DEVICES",
+  "PROFESSIONAL_FEE",
+  "MISCELLANEOUS",
+  "SHAREHOLDERS_DIVIDEND",
+  "OTHER",
+] as const;
+
 export const createExpenseSchema = z.object({
-  date: z.string().pipe(z.coerce.date()),
-  farm: z.enum(["KAASI_19", "MATITAL_I", "MATITAL_II", "COMBINED", "OTHER"]),
-  category: z.enum([
-    "FEED",
-    "UTILITIES",
-    "RENT",
-    "POWER_ELECTRIC",
-    "TRANSPORT",
-    "LABOR",
-    "VETERINARY",
-    "MAINTENANCE",
-    "OFFICE",
-    "OTHER",
-  ]),
-  challanId: z.string().optional(),
-  amount: z.number().positive(),
-  costPerHead: z.number().positive().optional(),
-  description: z.string().optional(),
+  expenseDate: z.string().pipe(z.coerce.date()),
+  month: z.string().min(3).max(3).optional(),
+  challan: z.string().optional(),
+  transId: z.string().optional(),
+  farm: z.enum(["MATITAL", "KAASI_19", "OTHER"]),
+  expenseCost: z.number().positive(),
+  head: z.enum(EXPENSE_HEADS),
+  notes: z.string().optional(),
 });
 
 export const updateExpenseSchema = createExpenseSchema.partial().extend({
   id: z.number().int().positive(),
 });
 
-export const EXPENSE_CATEGORIES = [
-  "FEED",
-  "UTILITIES",
-  "RENT",
-  "POWER_ELECTRIC",
-  "TRANSPORT",
-  "LABOR",
-  "VETERINARY",
-  "MAINTENANCE",
-  "OFFICE",
-  "OTHER",
-] as const;
-
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
-
 export const expenseQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().default(20),
-  farm: z
-    .enum(["KAASI_19", "MATITAL_I", "MATITAL_II", "COMBINED", "OTHER"])
-    .optional(),
-  category: z.enum(EXPENSE_CATEGORIES).optional(), // ← fixed here
-  month: z
-    .string()
-    .regex(/^\d{4}-\d{2}$/)
-    .optional(),
+  limit: z.coerce.number().int().positive().default(50),
+  farm: z.enum(["MATITAL", "KAASI_19", "OTHER"]).optional(),
+  head: z.enum(EXPENSE_HEADS).optional(),
+  month: z.string().min(3).max(3).optional(),
   startDate: z.string().pipe(z.coerce.date()).optional(),
   endDate: z.string().pipe(z.coerce.date()).optional(),
+  search: z.string().optional(),
+  cancelled: z.enum(["true", "false"]).optional(), // future filter
 });

@@ -19,7 +19,8 @@ export const createExpenseController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id && req.user?.role === "admin")
+      return res.status(401).json({ error: "Unauthorized" });
 
     const data = createExpenseSchema.parse(req.body);
     const result = await createExpenseService(data);
@@ -52,13 +53,13 @@ export const getExpensesController = async (
   }
 };
 
-// Similar pattern for update & delete
 export const updateExpenseController = async (
   req: AuthRequest,
   res: Response,
 ) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id && req.user?.role === "admin")
+      return res.status(401).json({ error: "Unauthorized" });
 
     const data = updateExpenseSchema.parse({
       ...req.body,
@@ -80,7 +81,8 @@ export const deleteExpenseController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id && req.user?.role === "admin")
+      return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
     const result = await deleteExpenseService(id);
