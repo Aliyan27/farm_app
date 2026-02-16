@@ -1,48 +1,28 @@
 import { Request, Response } from "express";
 import {
-  createExpenseService,
-  getExpensesService,
-  updateExpenseService,
-  deleteExpenseService,
-  getExpenseSummaryService,
-} from "./expenseService";
+  createFeedPurchaseService,
+  getFeedPurchasesService,
+  updateFeedPurchaseService,
+  deleteFeedPurchaseService,
+  getFeedPurchaseSummaryService,
+} from "./feedService";
 import {
-  createExpenseSchema,
-  updateExpenseSchema,
-  expenseQuerySchema,
-} from "./expense.validation";
+  createFeedPurchaseSchema,
+  updateFeedPurchaseSchema,
+  feedPurchaseQuerySchema,
+} from "./feed.validation";
 import { getCustomizedError } from "../../utils/UtilityFunctions";
 import { AuthRequest } from "../../middlewares/authMiddleware";
 
-export const createExpenseController = async (
-  req: AuthRequest,
-  res: Response,
-) => {
-  try {
-    if (!req.user?.id && req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
-
-    const data = createExpenseSchema.parse(req.body);
-    const result = await createExpenseService(data);
-
-    return res.status(result.statusCode).json({
-      message: result.message,
-      ...(result.data && { data: result.data }),
-    });
-  } catch (error) {
-    return getCustomizedError(error, res);
-  }
-};
-
-export const getExpensesController = async (
+export const createFeedPurchaseController = async (
   req: AuthRequest,
   res: Response,
 ) => {
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const query = expenseQuerySchema.parse(req.query);
-    const result = await getExpensesService(query);
+    const data = createFeedPurchaseSchema.parse(req.body);
+    const result = await createFeedPurchaseService(data);
 
     return res.status(result.statusCode).json({
       message: result.message,
@@ -53,19 +33,15 @@ export const getExpensesController = async (
   }
 };
 
-export const updateExpenseController = async (
+export const getFeedPurchasesController = async (
   req: AuthRequest,
   res: Response,
 ) => {
   try {
-    if (!req.user?.id && req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const data = updateExpenseSchema.parse({
-      ...req.body,
-      id: Number(req.params.id),
-    });
-    const result = await updateExpenseService(data);
+    const query = feedPurchaseQuerySchema.parse(req.query);
+    const result = await getFeedPurchasesService(query);
 
     return res.status(result.statusCode).json({
       message: result.message,
@@ -76,16 +52,39 @@ export const updateExpenseController = async (
   }
 };
 
-export const deleteExpenseController = async (
+export const updateFeedPurchaseController = async (
   req: AuthRequest,
   res: Response,
 ) => {
   try {
-    if (!req.user?.id && req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
-    const result = await deleteExpenseService(id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const data = updateFeedPurchaseSchema.parse({ ...req.body, id });
+    const result = await updateFeedPurchaseService(data);
+
+    return res.status(result.statusCode).json({
+      message: result.message,
+      ...(result.data && { data: result.data }),
+    });
+  } catch (error) {
+    return getCustomizedError(error, res);
+  }
+};
+
+export const deleteFeedPurchaseController = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+
+    const id = Number(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+    const result = await deleteFeedPurchaseService(id);
 
     return res.status(result.statusCode).json({ message: result.message });
   } catch (error) {
@@ -93,19 +92,19 @@ export const deleteExpenseController = async (
   }
 };
 
-export const getExpenseSummaryController = async (
+export const getFeedPurchaseSummaryController = async (
   req: AuthRequest,
   res: Response,
 ) => {
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const { month } = req.query;
-    if (typeof month !== "string" || !/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ error: "Invalid month format (YYYY-MM)" });
-    }
+    const { month, farm } = req.query;
+    const result = await getFeedPurchaseSummaryService(
+      typeof month === "string" ? month : undefined,
+      typeof farm === "string" ? farm : undefined,
+    );
 
-    const result = await getExpenseSummaryService(month);
     return res.status(result.statusCode).json({
       message: result.message,
       data: result.data,

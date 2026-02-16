@@ -10,8 +10,6 @@ import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const router = Router();
 
-router.use(authMiddleware);
-
 router.post("/", createEggProductionController);
 router.get("/", getEggProductionsController);
 router.get("/summary", getEggProductionSummaryController);

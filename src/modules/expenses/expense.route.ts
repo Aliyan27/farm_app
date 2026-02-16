@@ -6,11 +6,8 @@ import {
   deleteExpenseController,
   getExpenseSummaryController,
 } from "./expense.controller";
-import { authMiddleware } from "../../middlewares/authMiddleware";
 
 const expensesRouter = Router();
-
-expensesRouter.use(authMiddleware); // protect all routes
 
 expensesRouter.post("/", createExpenseController);
 expensesRouter.get("/", getExpensesController);

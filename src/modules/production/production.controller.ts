@@ -79,7 +79,7 @@ export const updateEggProductionController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id && req.user?.role === "admin")
+    if (!req.user?.id && req.user?.role !== "admin")
       return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
@@ -108,7 +108,7 @@ export const deleteEggProductionController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id && req.user?.role === "admin")
+    if (!req.user?.id && req.user?.role !== "admin")
       return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);

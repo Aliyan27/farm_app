@@ -13,6 +13,7 @@ model user{
     email String @unique
     password String
     role String @default("user")
+    isEmailVerified Boolean @default(false)
     createdAt DateTime @default(now())
 }
 
@@ -75,4 +76,35 @@ model EggProduction {
   notes        String?   // for any remarks
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model EggSale {
+  id              Int       @id @default(autoincrement())
+  saleDate        DateTime
+  month           String?   // e.g. "Dec"
+  challanNumber   String?   // "1031"
+  farm            FarmUnit  // KAASI_19, MATITAL, etc.
+  amountReceived  Float     // 16900
+  description     String    // "2p6c @ 5500"
+  type            String?   // usually "Eggs"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model FeedPurchase {
+  id               Int       @id @default(autoincrement())
+  date             DateTime
+  month            String?   // "Dec", "Jan", etc.
+  voucherType      String    // "IN" or "OUT"
+  feedType         String    // e.g. "13-C1", "13-C3"
+  farm             FarmUnit
+  bags             Int
+  description      String?
+  debit            Float?    // withdrawal / purchase cost (OUT)
+  credit           Float?    // funds added / payment received (IN)
+  runningBalance   Float?    // calculated or stored
+  reconciled       Boolean   @default(false)  // D.O. reconciled
+  postedToStatement Boolean  @default(false)  // posted to income statement
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
