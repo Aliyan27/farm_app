@@ -14,20 +14,28 @@ import { getCustomizedError } from "../../utils/UtilityFunctions";
  * @swagger
  * /reports/income-statement:
  *   get:
- *     summary: Generate Monthly/Period Income Statement
+ *     summary: Generate Income Statement for a date range
  *     description: |
- *       Returns a summarized Income Statement for the specified month (or all time).
+ *       Returns a summarized Income Statement for the given date range (or all time if no dates provided).
  *       Aggregates data from Egg Sales (revenue), Expenses (COGS & OpEx), and other sources.
  *     tags: [Reports]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: month
+ *         name: startDate
  *         schema:
  *           type: string
- *           example: "Dec"
- *           description: Month filter (e.g. "Dec", "January", or full name). Optional.
+ *           format: date
+ *           example: "2026-01-01"
+ *         description: Start of the period (YYYY-MM-DD). Optional.
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2026-01-31"
+ *         description: End of the period (YYYY-MM-DD). Optional.
  *       - in: query
  *         name: farm
  *         schema:
@@ -50,58 +58,37 @@ import { getCustomizedError } from "../../utils/UtilityFunctions";
  *                   properties:
  *                     period:
  *                       type: string
- *                       example: "Month: Dec"
+ *                       example: "From 2026-01-01 to 2026-01-31"
  *                     grossRevenue:
  *                       type: number
- *                       example: 29426700
  *                     otherIncome:
  *                       type: number
- *                       example: 65000
  *                     totalRevenue:
  *                       type: number
- *                       example: 29491700
  *                     cogs:
  *                       type: object
  *                       properties:
- *                         chicken:
- *                           type: number
- *                         feed:
- *                           type: number
- *                         medicine:
- *                           type: number
- *                         vaccine:
- *                           type: number
- *                         total:
- *                           type: number
+ *                         chicken: { type: number }
+ *                         feed: { type: number }
+ *                         medicine: { type: number }
+ *                         vaccine: { type: number }
+ *                         total: { type: number }
  *                     operatingExpenses:
  *                       type: object
  *                       properties:
- *                         rent:
- *                           type: number
- *                         utilities:
- *                           type: number
- *                         salariesPayments:
- *                           type: number
- *                         mess:
- *                           type: number
- *                         powerElectric:
- *                           type: number
- *                         pol:
- *                           type: number
- *                         packingMaterial:
- *                           type: number
- *                         repairMaintenance:
- *                           type: number
- *                         officeExpenses:
- *                           type: number
- *                         meetingRefreshment:
- *                           type: number
- *                         travellingLogistics:
- *                           type: number
- *                         miscellaneous:
- *                           type: number
- *                         total:
- *                           type: number
+ *                         rent: { type: number }
+ *                         utilities: { type: number }
+ *                         salariesPayments: { type: number }
+ *                         mess: { type: number }
+ *                         powerElectric: { type: number }
+ *                         pol: { type: number }
+ *                         packingMaterial: { type: number }
+ *                         repairMaintenance: { type: number }
+ *                         officeExpenses: { type: number }
+ *                         meetingRefreshment: { type: number }
+ *                         travellingLogistics: { type: number }
+ *                         miscellaneous: { type: number }
+ *                         total: { type: number }
  *                     totalExpenses:
  *                       type: number
  *                     netIncome:
@@ -121,10 +108,11 @@ export const getIncomeStatementController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const { month, farm } = req.query;
+    const { startDate, endDate, farm } = req.query;
 
     const result = await getIncomeStatementService({
-      month: typeof month === "string" ? month : undefined,
+      startDate: typeof startDate === "string" ? startDate : undefined,
+      endDate: typeof endDate === "string" ? endDate : undefined,
       farm: typeof farm === "string" ? farm : undefined,
     });
 

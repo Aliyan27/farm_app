@@ -1,7 +1,8 @@
 import prisma from "../../utils/Prisma";
 
 interface IncomeStatementInput {
-  month?: string;
+  startDate?: string;
+  endDate?: string;
   farm?: string;
 }
 
@@ -44,32 +45,45 @@ export const getIncomeStatementService = async (
   message: string;
   data: IncomeStatementResponse | null;
 }> => {
-  const { month, farm } = input;
+  const { startDate, endDate, farm } = input;
 
-  const where: any = {};
+  const commonWhere: any = {};
+  if (farm) commonWhere.farm = farm;
 
-  if (month) where.month = month;
-  if (farm) where.farm = farm;
+  const eggSaleWhere = { ...commonWhere };
+  const expenseWhere = { ...commonWhere };
+
+  if (startDate) {
+    eggSaleWhere.saleDate = { gte: new Date(startDate) };
+    expenseWhere.expenseDate = { gte: new Date(startDate) };
+  }
+  if (endDate) {
+    eggSaleWhere.saleDate = {
+      ...eggSaleWhere.saleDate,
+      lte: new Date(endDate),
+    };
+    expenseWhere.expenseDate = {
+      ...expenseWhere.expenseDate,
+      lte: new Date(endDate),
+    };
+  }
 
   try {
-    // 1. Egg Sale Revenue
     const eggSales = await prisma.eggSale.aggregate({
-      where,
+      where: eggSaleWhere,
       _sum: { amountReceived: true },
     });
 
     const grossRevenue = eggSales._sum.amountReceived ?? 0;
 
-    // 2. Other Income (placeholder — add real query later)
     const otherIncome = 0;
 
     const totalRevenue = grossRevenue + otherIncome;
 
-    // 3. COGS
     const cogsHeads = ["CHICKEN", "FEED", "MEDICINE", "VACCINE"];
     const cogsExpenses = await prisma.expense.groupBy({
       by: ["head"],
-      where: { ...where, head: { in: cogsHeads } },
+      where: { ...expenseWhere, head: { in: cogsHeads } },
       _sum: { expenseCost: true },
     });
 
@@ -100,7 +114,6 @@ export const getIncomeStatementService = async (
       cogs.total += cost;
     });
 
-    // 4. Operating Expenses (fixed type + switch)
     const opExHeads = [
       "RENT",
       "UTILITIES",
@@ -118,7 +131,7 @@ export const getIncomeStatementService = async (
 
     const opExpenses = await prisma.expense.groupBy({
       by: ["head"],
-      where: { ...where, head: { in: opExHeads } },
+      where: { ...expenseWhere, head: { in: opExHeads } },
       _sum: { expenseCost: true },
     });
 
@@ -181,15 +194,17 @@ export const getIncomeStatementService = async (
       operatingExpenses.total += cost;
     });
 
-    // 5. Total Expenses
     const totalExpenses = cogs.total + operatingExpenses.total;
 
-    // 6. Net Income
     const netIncome = totalRevenue - totalExpenses;
 
-    // 7. Final result
+    let period = "All time";
+    if (startDate || endDate) {
+      period = `From ${startDate || "earliest"} to ${endDate || "latest"}`;
+    }
+
     const result: IncomeStatementResponse = {
-      period: month ? `Month: ${month}` : "All time",
+      period,
       grossRevenue,
       otherIncome,
       totalRevenue,
