@@ -15,7 +15,7 @@ model user{
     role String @default("user")
     isEmailVerified Boolean @default(false)
     createdAt DateTime @default(now())
-}
+    }
 
 enum FarmUnit {
   KAASI_19

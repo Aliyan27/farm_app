@@ -11,6 +11,7 @@ export const getCustomizedError = (error: any, res: Response) => {
     });
   }
 
+  console.log(error);
   return res.status(500).json({
     success: false,
     message: "Internal server error during authentication",

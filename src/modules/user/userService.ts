@@ -1,5 +1,7 @@
+import z from "zod";
 import prisma from "../../utils/Prisma";
-import { changePasswordSchema } from "./user.validation";
+import { ServiceResponse } from "../expenses/expenseService";
+import { changePasswordSchema, updateProfileSchema } from "./user.validation";
 import bcrypt from "bcrypt";
 
 export const changePasswordService = async (
@@ -43,4 +45,63 @@ export const changePasswordService = async (
     message: "Password changed successfully",
     data: null,
   };
+};
+
+export const updateProfileService = async (
+  data: z.infer<typeof updateProfileSchema>,
+  userId: number,
+): Promise<ServiceResponse> => {
+  try {
+    // Optional: check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return {
+        statusCode: 404,
+        message: "User not found",
+        data: null,
+      };
+    }
+
+    // Only update allowed fields
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: data.name ? data.name.trim() : undefined,
+        // Add more fields when you extend the schema
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isEmailVerified: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      statusCode: 200,
+      message: "Profile updated successfully",
+      data: updatedUser,
+    };
+  } catch (err: any) {
+    console.error("[updateProfileService] Error:", err);
+
+    if (err.code === "P2025") {
+      return {
+        statusCode: 404,
+        message: "User not found",
+        data: null,
+      };
+    }
+
+    return {
+      statusCode: 500,
+      message: "Failed to update profile",
+      data: null,
+    };
+  }
 };
