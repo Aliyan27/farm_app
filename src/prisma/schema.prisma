@@ -108,3 +108,20 @@ model FeedPurchase {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 }
+
+model Salary {
+  id             Int       @id @default(autoincrement())
+  month          String    // "December", "January", etc.
+  employeeName   String
+  designation    String
+  farm           FarmUnit? // optional — some are "Management" (central)
+  attendance     Int?      // days present
+  basicSalary    Float?    // base pay
+  salaryAmount   Float     // gross salary
+  advance        Float?    // deducted advance
+  penaltyReward  Float?    // penalty or bonus
+  total          Float     // final amount paid
+  remarks        String?   // e.g. "Rs. 22k pending", "60k/100k recovered"
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
