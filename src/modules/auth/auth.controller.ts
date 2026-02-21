@@ -95,7 +95,7 @@ export const signupController = async (req: Request, res: Response) => {
     if (result.data) {
       return res.status(result.statusCode).json({
         message: result.message,
-        user: result.data,
+        data: { user: result.data },
       });
     }
 
@@ -176,7 +176,7 @@ export const signinController = async (req: Request, res: Response) => {
     if (result.data) {
       return res.status(result.statusCode).json({
         message: result.message,
-        ...result.data,
+        data: { ...result.data },
       });
     }
 

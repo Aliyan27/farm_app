@@ -19,7 +19,7 @@ export const signupService = async (data: typeof signupSchema._output) => {
 
   return {
     statusCode: 201,
-    message: "User created successfully",
+    message: "success",
     data: safeUser,
   };
 };
@@ -55,7 +55,7 @@ export const signinService = async (data: typeof signinSchema._output) => {
 
   return {
     statusCode: 200,
-    message: "Login successful",
+    message: "success",
     data: { token },
   };
 };
