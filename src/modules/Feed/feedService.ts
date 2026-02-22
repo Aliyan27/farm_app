@@ -50,7 +50,7 @@ export const createFeedPurchaseService = async (
 
     return {
       statusCode: 201,
-      message: "Feed purchase recorded",
+      message: "success",
       data: purchase,
     };
   } catch (err: any) {
@@ -105,7 +105,7 @@ export const getFeedPurchasesService = async (
 
     return {
       statusCode: 200,
-      message: "Feed purchases retrieved",
+      message: "success",
       data: {
         items: purchases,
         pagination: {
@@ -168,7 +168,7 @@ export const updateFeedPurchaseService = async (
 
     return {
       statusCode: 200,
-      message: "Feed purchase updated",
+      message: "success",
       data: updated,
     };
   } catch (err: any) {
@@ -202,7 +202,7 @@ export const deleteFeedPurchaseService = async (
 
     return {
       statusCode: 200,
-      message: "Feed purchase deleted",
+      message: "success",
       data: null,
     };
   } catch (err: any) {

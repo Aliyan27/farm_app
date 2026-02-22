@@ -35,7 +35,7 @@ export const createExpenseService = async (
 
     return {
       statusCode: 201,
-      message: "Expense recorded successfully",
+      message: "success",
       data: expense,
     };
   } catch (err: any) {
@@ -101,7 +101,7 @@ export const getExpensesService = async (
 
     return {
       statusCode: 200,
-      message: "Expenses retrieved",
+      message: "success",
       data: {
         items: expenses,
         pagination: {
@@ -154,7 +154,7 @@ export const updateExpenseService = async (
 
     return {
       statusCode: 200,
-      message: "Expense updated successfully",
+      message: "success",
       data: updated,
     };
   } catch (err: any) {
@@ -189,7 +189,7 @@ export const deleteExpenseService = async (
 
     return {
       statusCode: 200,
-      message: "Expense deleted successfully",
+      message: "success",
       data: null,
     };
   } catch (err: any) {

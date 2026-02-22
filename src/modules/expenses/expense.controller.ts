@@ -311,8 +311,7 @@ export const updateExpenseController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id || req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const data = updateExpenseSchema.parse({
       ...req.body,
@@ -358,8 +357,7 @@ export const deleteExpenseController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id || req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
     const result = await deleteExpenseService(id);

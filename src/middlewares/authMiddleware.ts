@@ -3,6 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../utils/Prisma"; // ← adjust path (e.g. "../generated/prisma" or "../lib/prisma")
 import { verifyToken } from "../utils/jwt"; // assuming you have this helper
+import { getCustomizedError } from "../utils/UtilityFunctions";
 
 // Extend Express Request type so TypeScript knows req.user exists
 export interface AuthRequest extends Request {
