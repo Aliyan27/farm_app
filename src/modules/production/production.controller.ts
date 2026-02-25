@@ -8,7 +8,6 @@ import {
 } from "./productionService";
 import {
   createEggProductionSchema,
-  eggProductionQuerySchema,
   updateEggProductionSchema,
 } from "./production.validation";
 import { getCustomizedError } from "../../utils/UtilityFunctions";
@@ -39,18 +38,15 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *               - date
  *               - farm
  *               - chickenEggs
+ *               - totalEggs
  *             properties:
  *               date:
  *                 type: string
  *                 format: date-time
  *                 example: "2025-12-01T00:00:00.000Z"
- *               month:
- *                 type: string
- *                 example: "Dec"
  *               farm:
  *                 type: string
  *                 enum: [KAASI_19, MATITAL, COMBINED, OTHER]
- *                 example: "KAASI_19"
  *               chickenEggs:
  *                 type: integer
  *                 minimum: 0
@@ -65,15 +61,6 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *     responses:
  *       201:
  *         description: Production record created
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
  *       400:
  *         description: Validation error
  *       401:
@@ -123,24 +110,17 @@ export const createEggProductionController = async (
  *           type: string
  *           enum: [KAASI_19, MATITAL, COMBINED, OTHER]
  *       - in: query
- *         name: month
- *         schema:
- *           type: string
- *           example: Dec
- *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
- *           format: date-time
+ *           format: date
+ *           example: "2025-01-01"
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
- *           format: date-time
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
+ *           format: date
+ *           example: "2025-01-31"
  *     responses:
  *       200:
  *         description: Paginated list of production records
@@ -156,8 +136,6 @@ export const createEggProductionController = async (
  *                   properties:
  *                     items:
  *                       type: array
- *                       items:
- *                         type: object
  *                     pagination:
  *                       type: object
  *                       properties:
@@ -181,8 +159,15 @@ export const getEggProductionsController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const query = eggProductionQuerySchema.parse(req.query);
-    const result = await getEggProductionsService(query);
+    const { page = 1, limit = 50, farm, startDate, endDate } = req.query;
+
+    const result = await getEggProductionsService(
+      Number(page),
+      Number(limit),
+      typeof farm === "string" ? farm : undefined,
+      typeof startDate === "string" ? startDate : undefined,
+      typeof endDate === "string" ? endDate : undefined,
+    );
 
     return res.status(result.statusCode).json({
       message: result.message,
@@ -197,21 +182,28 @@ export const getEggProductionsController = async (
  * @swagger
  * /egg-productions/summary:
  *   get:
- *     summary: Get egg production summary (totals by farm/month)
+ *     summary: Get egg production summary (total + breakdown by farm)
  *     tags: [Egg Production]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: month
- *         schema:
- *           type: string
- *           example: Dec
- *       - in: query
  *         name: farm
  *         schema:
  *           type: string
  *           enum: [KAASI_19, MATITAL, COMBINED, OTHER]
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-01"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-31"
  *     responses:
  *       200:
  *         description: Production summary
@@ -241,10 +233,12 @@ export const getEggProductionSummaryController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const { month, farm } = req.query;
+    const { farm, startDate, endDate } = req.query;
+
     const result = await getEggProductionSummaryService(
-      typeof month === "string" ? month : undefined,
       typeof farm === "string" ? farm : undefined,
+      typeof startDate === "string" ? startDate : undefined,
+      typeof endDate === "string" ? endDate : undefined,
     );
 
     return res.status(result.statusCode).json({
@@ -280,8 +274,6 @@ export const getEggProductionSummaryController = async (
  *               date:
  *                 type: string
  *                 format: date-time
- *               month:
- *                 type: string
  *               farm:
  *                 type: string
  *                 enum: [KAASI_19, MATITAL, COMBINED, OTHER]
@@ -295,9 +287,9 @@ export const getEggProductionSummaryController = async (
  *                 type: string
  *     responses:
  *       200:
- *         description: Production record updated
+ *         description: Record updated
  *       400:
- *         description: Invalid ID or validation error
+ *         description: Invalid input
  *       401:
  *         description: Unauthorized
  *       404:
@@ -308,8 +300,7 @@ export const updateEggProductionController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id || req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -348,9 +339,7 @@ export const updateEggProductionController = async (
  *           type: integer
  *     responses:
  *       200:
- *         description: Production record deleted
- *       400:
- *         description: Invalid ID
+ *         description: Record deleted
  *       401:
  *         description: Unauthorized
  *       404:
@@ -361,8 +350,7 @@ export const deleteEggProductionController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id || req.user?.role !== "admin")
-      return res.status(401).json({ error: "Unauthorized" });
+    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
     if (isNaN(id) || id <= 0) {
@@ -371,9 +359,7 @@ export const deleteEggProductionController = async (
 
     const result = await deleteEggProductionService(id);
 
-    return res.status(result.statusCode).json({
-      message: result.message,
-    });
+    return res.status(result.statusCode).json({ message: result.message });
   } catch (error) {
     return getCustomizedError(error, res);
   }

@@ -23,7 +23,7 @@ export const createEggProductionService = async (
     const record = await prisma.eggProduction.create({
       data: {
         date: data.date,
-        month: data.month,
+
         farm: data.farm,
         chickenEggs: data.chickenEggs,
         totalEggs: data.totalEggs,
@@ -33,7 +33,7 @@ export const createEggProductionService = async (
 
     return {
       statusCode: 201,
-      message: "Egg production recorded",
+      message: "success",
       data: record,
     };
   } catch (err: any) {
@@ -47,24 +47,26 @@ export const createEggProductionService = async (
 };
 
 export const getEggProductionsService = async (
-  query: QueryInput,
+  page: number,
+  limit: number,
+  farm?: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ServiceResponse> => {
-  const { page, limit, search, ...filters } = query;
   const skip = (page - 1) * limit;
 
   const where: any = {};
 
-  if (filters.farm) where.farm = filters.farm;
-  if (filters.month) where.month = filters.month;
+  if (farm) where.farm = farm;
 
-  if (filters.startDate || filters.endDate) {
+  if (startDate || endDate) {
     where.date = {};
-    if (filters.startDate) where.date.gte = filters.startDate;
-    if (filters.endDate) where.date.lte = filters.endDate;
-  }
-
-  if (search) {
-    where.notes = { contains: search, mode: "insensitive" };
+    if (startDate) where.date.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.date.lt = end;
+    }
   }
 
   try {
@@ -73,17 +75,14 @@ export const getEggProductionsService = async (
         where,
         skip,
         take: limit,
-        orderBy: [
-          { date: "desc" }, // newest first
-          { id: "desc" },
-        ],
+        orderBy: [{ date: "desc" }, { id: "desc" }],
       }),
       prisma.eggProduction.count({ where }),
     ]);
 
     return {
       statusCode: 200,
-      message: "Production records retrieved",
+      message: "success",
       data: {
         items: records,
         pagination: {
@@ -95,7 +94,7 @@ export const getEggProductionsService = async (
       },
     };
   } catch (err: any) {
-    console.error("[getEggProductions] Error:", err);
+    console.error("[getEggProductionsService] Error:", err);
     return {
       statusCode: 500,
       message: "Failed to fetch production records",
@@ -105,13 +104,23 @@ export const getEggProductionsService = async (
 };
 
 export const getEggProductionSummaryService = async (
-  month?: string,
   farm?: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ServiceResponse> => {
   const where: any = {};
 
-  if (month) where.month = month;
   if (farm) where.farm = farm;
+
+  if (startDate || endDate) {
+    where.date = {};
+    if (startDate) where.date.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.date.lt = end;
+    }
+  }
 
   try {
     const byFarm = await prisma.eggProduction.groupBy({
@@ -130,14 +139,14 @@ export const getEggProductionSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Monthly production summary",
+      message: "success",
       data: {
         totalEggs,
         byFarm,
       },
     };
   } catch (err: any) {
-    console.error("[getEggProductionSummary] Error:", err);
+    console.error("[getEggProductionSummaryService] Error:", err);
     return {
       statusCode: 500,
       message: "Failed to generate summary",
@@ -166,7 +175,6 @@ export const updateEggProductionService = async (
       where: { id: data.id },
       data: {
         date: data.date,
-        month: data.month,
         farm: data.farm,
         chickenEggs: data.chickenEggs,
         totalEggs: data.totalEggs,
@@ -176,7 +184,7 @@ export const updateEggProductionService = async (
 
     return {
       statusCode: 200,
-      message: "Egg production record updated successfully",
+      message: "success",
       data: updated,
     };
   } catch (err: any) {
@@ -211,7 +219,7 @@ export const deleteEggProductionService = async (
 
     return {
       statusCode: 200,
-      message: "Egg production record deleted successfully",
+      message: "success",
       data: null,
     };
   } catch (err: any) {
