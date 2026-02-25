@@ -1,14 +1,9 @@
 import { z } from "zod";
 import prisma from "../../utils/Prisma";
-import {
-  createExpenseSchema,
-  updateExpenseSchema,
-  expenseQuerySchema,
-} from "./expense.validation";
+import { createExpenseSchema, updateExpenseSchema } from "./expense.validation";
 
 type CreateInput = z.infer<typeof createExpenseSchema>;
 type UpdateInput = z.infer<typeof updateExpenseSchema>;
-type QueryInput = z.infer<typeof expenseQuerySchema>;
 
 export interface ServiceResponse<T = any> {
   statusCode: number;
@@ -23,7 +18,6 @@ export const createExpenseService = async (
     const expense = await prisma.expense.create({
       data: {
         expenseDate: data.expenseDate,
-        month: data.month,
         challan: data.challan,
         transId: data.transId,
         farm: data.farm,
@@ -44,7 +38,7 @@ export const createExpenseService = async (
     if (err.code === "P2002") {
       return {
         statusCode: 409,
-        message: "Duplicate expense entry (unique constraint violation)",
+        message: "Duplicate expense entry",
         data: null,
       };
     }
@@ -58,35 +52,26 @@ export const createExpenseService = async (
 };
 
 export const getExpensesService = async (
-  query: QueryInput,
+  page: number,
+  limit: number,
+  farm?: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ServiceResponse> => {
-  const { page, limit, search, cancelled, ...filters } = query;
   const skip = (page - 1) * limit;
 
   const where: any = {};
 
-  if (filters.farm) where.farm = filters.farm;
-  if (filters.head) where.head = filters.head;
-  if (filters.month) where.month = filters.month;
+  if (farm) where.farm = farm;
 
-  if (filters.startDate || filters.endDate) {
+  if (startDate || endDate) {
     where.expenseDate = {};
-    if (filters.startDate) where.expenseDate.gte = filters.startDate;
-    if (filters.endDate) where.expenseDate.lte = filters.endDate;
-  }
-
-  if (search) {
-    where.OR = [
-      { notes: { contains: search, mode: "insensitive" } },
-      { challan: { contains: search, mode: "insensitive" } },
-      { transId: { contains: search, mode: "insensitive" } },
-    ];
-  }
-
-  if (cancelled === "true") {
-    where.notes = { contains: "Cancel", mode: "insensitive" };
-  } else if (cancelled === "false") {
-    where.notes = { not: { contains: "Cancel", mode: "insensitive" } };
+    if (startDate) where.expenseDate.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.expenseDate.lt = end;
+    }
   }
 
   try {
@@ -142,7 +127,6 @@ export const updateExpenseService = async (
       where: { id: data.id },
       data: {
         expenseDate: data.expenseDate,
-        month: data.month,
         challan: data.challan,
         transId: data.transId,
         farm: data.farm,
@@ -212,13 +196,23 @@ export const deleteExpenseService = async (
 };
 
 export const getExpenseSummaryService = async (
-  month?: string,
   farm?: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ServiceResponse> => {
   const where: any = {};
 
-  if (month) where.month = month;
   if (farm) where.farm = farm;
+
+  if (startDate || endDate) {
+    where.expenseDate = {};
+    if (startDate) where.expenseDate.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.expenseDate.lt = end;
+    }
+  }
 
   try {
     const byHead = await prisma.expense.groupBy({
@@ -243,7 +237,7 @@ export const getExpenseSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Expense summary generated",
+      message: "success",
       data: {
         total: totalCost,
         byHead,

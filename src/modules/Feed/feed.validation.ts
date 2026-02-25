@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const createFeedPurchaseSchema = z.object({
   date: z.string().pipe(z.coerce.date()),
-  month: z.string().length(3).optional(),
   voucherType: z.enum(["IN", "OUT"]),
   feedType: z.string().min(1),
   farm: z.enum(["KAASI_19", "MATITAL", "COMBINED", "OTHER"]),
@@ -24,7 +23,6 @@ export const feedPurchaseQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().default(50),
   farm: z.enum(["KAASI_19", "MATITAL", "COMBINED", "OTHER"]).optional(),
-  month: z.string().length(3).optional(),
   voucherType: z.enum(["IN", "OUT"]).optional(),
   startDate: z.string().pipe(z.coerce.date()).optional(),
   endDate: z.string().pipe(z.coerce.date()).optional(),

@@ -52,7 +52,6 @@ enum ExpenseHead {
 model Expense {
   id            Int           @id @default(autoincrement())
   expenseDate   DateTime      @map("expense_date")
-  month         String?       // "Dec", "Jan" – keep manual for now
   challan       String?
   transId       String?       @map("trans_id")
   farm          FarmUnit
@@ -69,7 +68,6 @@ model Expense {
 model EggProduction {
   id           Int       @id @default(autoincrement())
   date         DateTime
-  month        String?   // "Dec"
   farm         FarmUnit
   chickenEggs  Int
   totalEggs    Int?
@@ -81,7 +79,6 @@ model EggProduction {
 model EggSale {
   id              Int       @id @default(autoincrement())
   saleDate        DateTime
-  month           String?   // e.g. "Dec"
   challanNumber   String?   // "1031"
   farm            FarmUnit  // KAASI_19, MATITAL, etc.
   amountReceived  Float     // 16900
@@ -94,7 +91,6 @@ model EggSale {
 model FeedPurchase {
   id               Int       @id @default(autoincrement())
   date             DateTime
-  month            String?   // "Dec", "Jan", etc.
   voucherType      String    // "IN" or "OUT"
   feedType         String    // e.g. "13-C1", "13-C3"
   farm             FarmUnit
@@ -111,7 +107,6 @@ model FeedPurchase {
 
 model Salary {
   id             Int       @id @default(autoincrement())
-  month          String    // "December", "January", etc.
   employeeName   String
   designation    String
   farm           FarmUnit? // optional — some are "Management" (central)

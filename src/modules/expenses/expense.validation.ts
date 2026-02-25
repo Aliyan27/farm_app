@@ -28,7 +28,6 @@ export const EXPENSE_HEADS = [
 
 export const createExpenseSchema = z.object({
   expenseDate: z.string().pipe(z.coerce.date()),
-  month: z.string().min(3).max(3).optional(),
   challan: z.string().optional(),
   transId: z.string().optional(),
   farm: z.enum(["MATITAL", "KAASI_19", "OTHER"]),
@@ -46,7 +45,6 @@ export const expenseQuerySchema = z.object({
   limit: z.coerce.number().int().positive().default(50),
   farm: z.enum(["MATITAL", "KAASI_19", "OTHER"]).optional(),
   head: z.enum(EXPENSE_HEADS).optional(),
-  month: z.string().min(3).max(3).optional(),
   startDate: z.string().pipe(z.coerce.date()).optional(),
   endDate: z.string().pipe(z.coerce.date()).optional(),
   search: z.string().optional(),

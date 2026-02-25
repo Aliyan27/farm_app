@@ -395,10 +395,10 @@ export const getFeedPurchaseSummaryController = async (
 ) => {
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
-
-    const { month, farm } = req.query;
+    const { startDate, endDate, farm } = req.query;
     const result = await getFeedPurchaseSummaryService(
-      typeof month === "string" ? month : undefined,
+      startDate as string | undefined,
+      endDate as string | undefined,
       typeof farm === "string" ? farm : undefined,
     );
 

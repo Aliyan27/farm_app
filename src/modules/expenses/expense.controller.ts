@@ -6,11 +6,7 @@ import {
   deleteExpenseService,
   getExpenseSummaryService,
 } from "./expenseService";
-import {
-  createExpenseSchema,
-  updateExpenseSchema,
-  expenseQuerySchema,
-} from "./expense.validation";
+import { createExpenseSchema, updateExpenseSchema } from "./expense.validation";
 import { getCustomizedError } from "../../utils/UtilityFunctions";
 import { AuthRequest } from "../../middlewares/authMiddleware";
 
@@ -18,7 +14,7 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  * @swagger
  * tags:
  *   name: Expenses
- *   description: Expense management endpoints (create, list, update, delete, summary)
+ *   description: Expense management endpoints
  */
 
 /**
@@ -45,11 +41,6 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *                 type: string
  *                 format: date-time
  *                 example: "2025-12-01T00:00:00.000Z"
- *               month:
- *                 type: string
- *                 example: "Dec"
- *                 minLength: 3
- *                 maxLength: 3
  *               challan:
  *                 type: string
  *                 example: "748"
@@ -94,15 +85,6 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *     responses:
  *       201:
  *         description: Expense created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
  *       400:
  *         description: Validation error
  *       401:
@@ -131,7 +113,7 @@ export const createExpenseController = async (
  * @swagger
  * /expenses:
  *   get:
- *     summary: Get list of expenses (paginated & filtered)
+ *     summary: Get paginated list of expenses (filtered by farm & date range)
  *     tags: [Expenses]
  *     security:
  *       - bearerAuth: []
@@ -152,61 +134,20 @@ export const createExpenseController = async (
  *           type: string
  *           enum: [MATITAL, KAASI_19, OTHER]
  *       - in: query
- *         name: head
- *         schema:
- *           type: string
- *           enum:
- *             - CHICKEN
- *             - FEED
- *             - RENT
- *             - UTILITIES
- *             - PACKING_MATERIAL
- *             - TP
- *             - SALARIES_PAYMENTS
- *             - MESS
- *             - POWER_ELECTRIC
- *             - POL
- *             - MEDICINE
- *             - VACCINE
- *             - REPAIR_MAINTENANCE
- *             - TRAVELLING_LOGISTICS
- *             - OFFICE_EXPENSES
- *             - MEETING_REFRESHMENT
- *             - FURNITURE_FIXTURE
- *             - COMPUTER_DEVICES
- *             - PROFESSIONAL_FEE
- *             - MISCELLANEOUS
- *             - SHAREHOLDERS_DIVIDEND
- *             - OTHER
- *       - in: query
- *         name: month
- *         schema:
- *           type: string
- *           minLength: 3
- *           maxLength: 3
- *           example: Dec
- *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
- *           format: date-time
+ *           format: date
+ *           example: "2025-01-01"
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
- *           format: date-time
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *       - in: query
- *         name: cancelled
- *         schema:
- *           type: string
- *           enum: [true, false]
+ *           format: date
+ *           example: "2025-01-31"
  *     responses:
  *       200:
- *         description: List of expenses with pagination
+ *         description: Paginated list of expenses
  *         content:
  *           application/json:
  *             schema:
@@ -219,8 +160,6 @@ export const createExpenseController = async (
  *                   properties:
  *                     items:
  *                       type: array
- *                       items:
- *                         type: object
  *                     pagination:
  *                       type: object
  *                       properties:
@@ -244,8 +183,15 @@ export const getExpensesController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const query = expenseQuerySchema.parse(req.query);
-    const result = await getExpensesService(query);
+    const { page = 1, limit = 50, farm, startDate, endDate } = req.query;
+
+    const result = await getExpensesService(
+      Number(page),
+      Number(limit),
+      typeof farm === "string" ? farm : undefined,
+      typeof startDate === "string" ? startDate : undefined,
+      typeof endDate === "string" ? endDate : undefined,
+    );
 
     return res.status(result.statusCode).json({
       message: result.message,
@@ -280,8 +226,6 @@ export const getExpensesController = async (
  *               expenseDate:
  *                 type: string
  *                 format: date-time
- *               month:
- *                 type: string
  *               challan:
  *                 type: string
  *               transId:
@@ -293,7 +237,7 @@ export const getExpensesController = async (
  *                 type: number
  *               head:
  *                 type: string
- *                 enum: [CHICKEN, FEED, MEDICINE, ...]
+ *                 enum: [CHICKEN, FEED, ...]
  *               notes:
  *                 type: string
  *     responses:
@@ -345,8 +289,6 @@ export const updateExpenseController = async (
  *     responses:
  *       200:
  *         description: Expense deleted
- *       400:
- *         description: Invalid ID
  *       401:
  *         description: Unauthorized
  *       404:
@@ -372,18 +314,28 @@ export const deleteExpenseController = async (
  * @swagger
  * /expenses/summary:
  *   get:
- *     summary: Get expense summary (totals by head/farm)
+ *     summary: Get expense summary (total + breakdown by head & farm)
  *     tags: [Expenses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: month
+ *         name: farm
  *         schema:
  *           type: string
- *           pattern: '^\d{4}-\d{2}$'
- *           example: 2025-12
- *         description: Month in YYYY-MM format
+ *           enum: [MATITAL, KAASI_19, OTHER]
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-01"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-31"
  *     responses:
  *       200:
  *         description: Expense summary
@@ -407,8 +359,6 @@ export const deleteExpenseController = async (
  *                       type: array
  *                       items:
  *                         type: object
- *       400:
- *         description: Invalid month format
  *       401:
  *         description: Unauthorized
  */
@@ -419,12 +369,14 @@ export const getExpenseSummaryController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const { month } = req.query;
-    if (typeof month !== "string" || !/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ error: "Invalid month format (YYYY-MM)" });
-    }
+    const { farm, startDate, endDate } = req.query;
 
-    const result = await getExpenseSummaryService(month);
+    const result = await getExpenseSummaryService(
+      typeof farm === "string" ? farm : undefined,
+      typeof startDate === "string" ? startDate : undefined,
+      typeof endDate === "string" ? endDate : undefined,
+    );
+
     return res.status(result.statusCode).json({
       message: result.message,
       data: result.data,

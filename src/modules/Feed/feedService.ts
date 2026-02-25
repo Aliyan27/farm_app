@@ -16,7 +16,6 @@ export interface ServiceResponse<T = any> {
   data: T | null;
 }
 
-// CREATE
 export const createFeedPurchaseService = async (
   data: CreateInput,
 ): Promise<ServiceResponse> => {
@@ -34,7 +33,6 @@ export const createFeedPurchaseService = async (
     const purchase = await prisma.feedPurchase.create({
       data: {
         date: data.date,
-        month: data.month,
         voucherType: data.voucherType,
         feedType: data.feedType,
         farm: data.farm,
@@ -63,7 +61,6 @@ export const createFeedPurchaseService = async (
   }
 };
 
-// READ list
 export const getFeedPurchasesService = async (
   query: QueryInput,
 ): Promise<ServiceResponse> => {
@@ -73,7 +70,6 @@ export const getFeedPurchasesService = async (
   const where: any = {};
 
   if (filters.farm) where.farm = filters.farm;
-  if (filters.month) where.month = filters.month;
   if (filters.voucherType) where.voucherType = filters.voucherType;
 
   if (filters.startDate || filters.endDate) {
@@ -126,7 +122,6 @@ export const getFeedPurchasesService = async (
   }
 };
 
-// UPDATE
 export const updateFeedPurchaseService = async (
   data: UpdateInput,
 ): Promise<ServiceResponse> => {
@@ -152,7 +147,6 @@ export const updateFeedPurchaseService = async (
       where: { id: data.id },
       data: {
         date: data.date,
-        month: data.month,
         voucherType: data.voucherType,
         feedType: data.feedType,
         farm: data.farm,
@@ -181,7 +175,6 @@ export const updateFeedPurchaseService = async (
   }
 };
 
-// DELETE
 export const deleteFeedPurchaseService = async (
   id: number,
 ): Promise<ServiceResponse> => {
@@ -215,15 +208,32 @@ export const deleteFeedPurchaseService = async (
   }
 };
 
-// SUMMARY (total debit/credit, balance overview)
 export const getFeedPurchaseSummaryService = async (
-  month?: string,
+  startDate?: string,
+  endDate?: string,
   farm?: string,
 ): Promise<ServiceResponse> => {
   const where: any = {};
 
-  if (month) where.month = month;
-  if (farm) where.farm = farm;
+  // Date range filter
+  if (startDate || endDate) {
+    where.date = {};
+
+    if (startDate) {
+      where.date.gte = new Date(startDate);
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.date.lt = end;
+    }
+  }
+
+  // Farm filter
+  if (farm) {
+    where.farm = farm;
+  }
 
   try {
     const summary = await prisma.feedPurchase.aggregate({
@@ -235,7 +245,7 @@ export const getFeedPurchaseSummaryService = async (
       },
     });
 
-    // Latest running balance
+    // Latest running balance in the filtered range
     const latest = await prisma.feedPurchase.findFirst({
       where,
       orderBy: { date: "desc" },
@@ -244,7 +254,7 @@ export const getFeedPurchaseSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Feed purchase summary",
+      message: "success",
       data: {
         totalDebit: summary._sum.debit ?? 0,
         totalCredit: summary._sum.credit ?? 0,
