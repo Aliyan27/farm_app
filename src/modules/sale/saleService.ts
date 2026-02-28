@@ -16,7 +16,6 @@ export interface ServiceResponse<T = any> {
   data: T | null;
 }
 
-// CREATE
 export const createEggSaleService = async (
   data: CreateInput,
 ): Promise<ServiceResponse> => {
@@ -24,18 +23,21 @@ export const createEggSaleService = async (
     const sale = await prisma.eggSale.create({
       data: {
         saleDate: data.saleDate,
-        month: data.month,
         challanNumber: data.challanNumber,
+        eggsSold: data.eggsSold,
+        totalAmount: data.totalAmount,
+        paymentDue: data.paymentDue,
+        pricePerEgg: data.pricePerEgg,
         farm: data.farm,
         amountReceived: data.amountReceived,
-        description: data.description,
+        notes: data.notes,
         type: data.type,
       },
     });
 
     return {
       statusCode: 201,
-      message: "Egg sale recorded successfully",
+      message: "success",
       data: sale,
     };
   } catch (err: any) {
@@ -48,7 +50,6 @@ export const createEggSaleService = async (
   }
 };
 
-// READ (list)
 export const getEggSalesService = async (
   query: QueryInput,
 ): Promise<ServiceResponse> => {
@@ -58,14 +59,16 @@ export const getEggSalesService = async (
   const where: any = {};
 
   if (filters.farm) where.farm = filters.farm;
-  if (filters.month) where.month = filters.month;
 
   if (filters.startDate || filters.endDate) {
     where.saleDate = {};
-    if (filters.startDate) where.saleDate.gte = filters.startDate;
-    if (filters.endDate) where.saleDate.lte = filters.endDate;
+    if (filters.startDate) where.saleDate.gte = new Date(filters.startDate);
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setDate(end.getDate() + 1);
+      where.saleDate.lt = end;
+    }
   }
-
   if (search) {
     where.OR = [
       { description: { contains: search, mode: "insensitive" } },
@@ -86,7 +89,7 @@ export const getEggSalesService = async (
 
     return {
       statusCode: 200,
-      message: "Egg sales retrieved",
+      message: "success",
       data: {
         items: sales,
         pagination: {
@@ -107,7 +110,6 @@ export const getEggSalesService = async (
   }
 };
 
-// UPDATE
 export const updateEggSaleService = async (
   data: UpdateInput,
 ): Promise<ServiceResponse> => {
@@ -128,18 +130,21 @@ export const updateEggSaleService = async (
       where: { id: data.id },
       data: {
         saleDate: data.saleDate,
-        month: data.month,
         challanNumber: data.challanNumber,
+        eggsSold: data.eggsSold,
+        totalAmount: data.totalAmount,
+        paymentDue: data.paymentDue,
+        pricePerEgg: data.pricePerEgg,
         farm: data.farm,
         amountReceived: data.amountReceived,
-        description: data.description,
+        notes: data.notes,
         type: data.type,
       },
     });
 
     return {
       statusCode: 200,
-      message: "Egg sale updated successfully",
+      message: "success",
       data: updated,
     };
   } catch (err: any) {
@@ -152,7 +157,6 @@ export const updateEggSaleService = async (
   }
 };
 
-// DELETE
 export const deleteEggSaleService = async (
   id: number,
 ): Promise<ServiceResponse> => {
@@ -173,18 +177,11 @@ export const deleteEggSaleService = async (
 
     return {
       statusCode: 200,
-      message: "Egg sale deleted successfully",
+      message: "success",
       data: null,
     };
   } catch (err: any) {
     console.error("[deleteEggSaleService] Error:", err);
-    if (err.code === "P2025") {
-      return {
-        statusCode: 404,
-        message: "Egg sale record not found",
-        data: null,
-      };
-    }
     return {
       statusCode: 500,
       message: "Failed to delete egg sale",
@@ -193,37 +190,69 @@ export const deleteEggSaleService = async (
   }
 };
 
-// SUMMARY (total revenue, by farm)
 export const getEggSaleSummaryService = async (
-  month?: string,
   farm?: string,
+  startDate?: string,
+  endDate?: string,
 ): Promise<ServiceResponse> => {
   const where: any = {};
 
-  if (month) where.month = month;
   if (farm) where.farm = farm;
+
+  if (startDate || endDate) {
+    where.saleDate = {};
+    if (startDate) where.saleDate.gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where.saleDate.lt = end;
+    }
+  }
 
   try {
     const byFarm = await prisma.eggSale.groupBy({
       by: ["farm"],
       where,
-      _sum: { amountReceived: true },
-      orderBy: { _sum: { amountReceived: "desc" } },
+      _sum: {
+        eggsSold: true,
+        totalAmount: true,
+        amountReceived: true,
+        paymentDue: true,
+      },
+      orderBy: {
+        _sum: {
+          totalAmount: "desc",
+        },
+      },
     });
 
-    const total = await prisma.eggSale.aggregate({
+    const totals = await prisma.eggSale.aggregate({
       where,
-      _sum: { amountReceived: true },
+      _sum: {
+        eggsSold: true,
+        totalAmount: true,
+        amountReceived: true,
+        paymentDue: true,
+      },
     });
-
-    const totalRevenue = total._sum?.amountReceived ?? 0;
 
     return {
       statusCode: 200,
-      message: "Egg sale summary generated",
+      message: "success",
       data: {
-        totalRevenue,
-        byFarm,
+        totalEggsSold: totals._sum.eggsSold ?? 0,
+        totalRevenue: totals._sum.totalAmount ?? 0,
+        totalReceived: totals._sum.amountReceived ?? 0,
+        totalDue: totals._sum.paymentDue ?? 0,
+        byFarm: byFarm.map((group) => ({
+          farm: group.farm,
+          _sum: {
+            eggsSold: group._sum.eggsSold ?? null,
+            totalAmount: group._sum.totalAmount ?? null,
+            paymentReceived: group._sum.amountReceived ?? null,
+            paymentDue: group._sum.paymentDue ?? null,
+          },
+        })),
       },
     };
   } catch (err: any) {

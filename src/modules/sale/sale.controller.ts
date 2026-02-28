@@ -45,15 +45,12 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *                 type: string
  *                 format: date-time
  *                 example: "2025-12-01T00:00:00.000Z"
- *               month:
- *                 type: string
- *                 example: "Dec"
  *               challanNumber:
  *                 type: string
  *                 example: "1031"
  *               farm:
  *                 type: string
- *                 enum: [KAASI_19, MATITAL, COMBINED, OTHER]
+ *                 enum: [KAASI_19, MATITAL, OTHER]
  *                 example: "KAASI_19"
  *               amountReceived:
  *                 type: number
@@ -69,15 +66,6 @@ import { AuthRequest } from "../../middlewares/authMiddleware";
  *     responses:
  *       201:
  *         description: Egg sale recorded
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 data:
- *                   type: object
  *       400:
  *         description: Validation error (missing required fields)
  *       401:
@@ -125,22 +113,19 @@ export const createEggSaleController = async (
  *         name: farm
  *         schema:
  *           type: string
- *           enum: [KAASI_19, MATITAL, COMBINED, OTHER]
- *       - in: query
- *         name: month
- *         schema:
- *           type: string
- *           example: Dec
+ *           enum: [KAASI_19, MATITAL, OTHER]
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
- *           format: date-time
+ *           format: date
+ *           example: "2025-01-01"
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
- *           format: date-time
+ *           format: date
+ *           example: "2025-01-31"
  *       - in: query
  *         name: search
  *         schema:
@@ -222,13 +207,11 @@ export const getEggSalesController = async (
  *               saleDate:
  *                 type: string
  *                 format: date-time
- *               month:
- *                 type: string
  *               challanNumber:
  *                 type: string
  *               farm:
  *                 type: string
- *                 enum: [KAASI_19, MATITAL, COMBINED, OTHER]
+ *                 enum: [KAASI_19, MATITAL, OTHER]
  *               amountReceived:
  *                 type: number
  *                 minimum: 0
@@ -254,7 +237,8 @@ export const updateEggSaleController = async (
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    if (isNaN(id) || id <= 0)
+      return res.status(400).json({ error: "Invalid ID" });
 
     const data = updateEggSaleSchema.parse({ ...req.body, id });
     const result = await updateEggSaleService(data);
@@ -300,7 +284,8 @@ export const deleteEggSaleController = async (
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
     const id = Number(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+    if (isNaN(id) || id <= 0)
+      return res.status(400).json({ error: "Invalid ID" });
 
     const result = await deleteEggSaleService(id);
 
@@ -314,21 +299,28 @@ export const deleteEggSaleController = async (
  * @swagger
  * /egg-sales/summary:
  *   get:
- *     summary: Get egg sales summary (totals by farm/month)
+ *     summary: Get egg sales summary (total revenue by farm)
  *     tags: [Egg Sales]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: query
- *         name: month
- *         schema:
- *           type: string
- *           example: Dec
- *       - in: query
  *         name: farm
  *         schema:
  *           type: string
- *           enum: [KAASI_19, MATITAL, COMBINED, OTHER]
+ *           enum: [KAASI_19, MATITAL, OTHER]
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-01"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *           example: "2025-01-31"
  *     responses:
  *       200:
  *         description: Sales summary
@@ -342,7 +334,7 @@ export const deleteEggSaleController = async (
  *                 data:
  *                   type: object
  *                   properties:
- *                     totalAmount:
+ *                     totalAmountReceived:
  *                       type: number
  *                     byFarm:
  *                       type: array
@@ -358,15 +350,17 @@ export const getEggSaleSummaryController = async (
   try {
     if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
 
-    const { month, farm } = req.query;
+    const { farm, startDate, endDate } = req.query;
+
     const result = await getEggSaleSummaryService(
-      typeof month === "string" ? month : undefined,
       typeof farm === "string" ? farm : undefined,
+      typeof startDate === "string" ? startDate : undefined,
+      typeof endDate === "string" ? endDate : undefined,
     );
 
     return res.status(result.statusCode).json({
       message: result.message,
-      data: result.data,
+      ...(result.data && { data: result.data }),
     });
   } catch (error) {
     return getCustomizedError(error, res);

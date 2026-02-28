@@ -70,6 +70,7 @@ model EggProduction {
   date         DateTime
   farm         FarmUnit
   chickenEggs  Int
+  eggsSold       Int?      @default(0)
   totalEggs    Int?
   notes        String?   // for any remarks
   createdAt    DateTime  @default(now())
@@ -79,11 +80,15 @@ model EggProduction {
 model EggSale {
   id              Int       @id @default(autoincrement())
   saleDate        DateTime
-  challanNumber   String?   // "1031"
-  farm            FarmUnit  // KAASI_19, MATITAL, etc.
-  amountReceived  Float     // 16900
-  description     String    // "2p6c @ 5500"
-  type            String?   // usually "Eggs"
+  challanNumber   String?
+  farm            FarmUnit
+  eggsSold        Int       @default(0)          // ← added: number of eggs sold
+  pricePerEgg     Float?                         // ← added: optional price per egg
+  totalAmount     Float?                         // ← added: total billed (eggsSold × pricePerEgg)
+  amountReceived  Float                          // already exists: cash received
+  paymentDue      Float?                         // ← added: remaining unpaid
+  notes     String? 
+  type            String?   @default("Eggs")
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

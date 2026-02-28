@@ -22,7 +22,6 @@ export const createSalaryService = async (
   try {
     const salary = await prisma.salary.create({
       data: {
-        month: data.month,
         employeeName: data.employeeName,
         designation: data.designation,
         farm: data.farm,
@@ -76,7 +75,6 @@ export const getSalariesService = async (
         where,
         skip,
         take: limit,
-        orderBy: [{ month: "desc" }, { employeeName: "asc" }],
       }),
       prisma.salary.count({ where }),
     ]);
@@ -123,7 +121,6 @@ export const updateSalaryService = async (
     const updated = await prisma.salary.update({
       where: { id: data.id },
       data: {
-        month: data.month,
         employeeName: data.employeeName,
         designation: data.designation,
         farm: data.farm,
