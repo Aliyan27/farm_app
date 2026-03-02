@@ -5,6 +5,7 @@ import userRouter from "../modules/user/user.route";
 import eggSaleRouter from "../modules/sale/sale.route";
 import feedPurchaseRouter from "../modules/Feed/feed.route";
 import salariesRouter from "../modules/salaries/salaries.route";
+import dashboardRouter from "../modules/dashboard/dashboard.route";
 
 const routes = {
   public: [{ endpoint: "/auth", router: authRouter }],
@@ -15,6 +16,7 @@ const routes = {
     { endpoint: "/egg-sales", router: eggSaleRouter },
     { endpoint: "/feed-purchase", router: feedPurchaseRouter },
     { endpoint: "/salaries", router: salariesRouter },
+    { endpoint: "/dashboard", router: dashboardRouter },
   ],
 };
 

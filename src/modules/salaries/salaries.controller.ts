@@ -380,12 +380,11 @@ export const getSalarySummaryController = async (
   res: Response,
 ) => {
   try {
-    if (!req.user?.id) return res.status(401).json({ error: "Unauthorized" });
+    const { farm, search } = req.query;
 
-    const { month, farm } = req.query;
     const result = await getSalarySummaryService(
-      typeof month === "string" ? month : undefined,
       typeof farm === "string" ? farm : undefined,
+      typeof search === "string" ? search : undefined,
     );
 
     return res.status(result.statusCode).json({

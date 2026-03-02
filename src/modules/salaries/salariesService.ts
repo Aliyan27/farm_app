@@ -37,7 +37,7 @@ export const createSalaryService = async (
 
     return {
       statusCode: 201,
-      message: "Salary record created successfully",
+      message: "success",
       data: salary,
     };
   } catch (err: any) {
@@ -53,13 +53,11 @@ export const createSalaryService = async (
 export const getSalariesService = async (
   query: QueryInput,
 ): Promise<ServiceResponse> => {
-  const { page, limit, search, ...filters } = query;
+  const { page, limit, search, farm } = query;
   const skip = (page - 1) * limit;
 
   const where: any = {};
-
-  if (filters.month) where.month = filters.month;
-  if (filters.farm) where.farm = filters.farm;
+  if (farm) where.farm = farm;
 
   if (search) {
     where.OR = [
@@ -75,13 +73,14 @@ export const getSalariesService = async (
         where,
         skip,
         take: limit,
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       }),
       prisma.salary.count({ where }),
     ]);
 
     return {
       statusCode: 200,
-      message: "Salary records retrieved",
+      message: "success",
       data: {
         items: salaries,
         pagination: {
@@ -127,7 +126,7 @@ export const updateSalaryService = async (
         attendance: data.attendance,
         basicSalary: data.basicSalary,
         salaryAmount: data.salaryAmount,
-        advance: data.advance,
+        advance: data.advance ?? 0,
         penaltyReward: data.penaltyReward,
         total: data.total,
         remarks: data.remarks,
@@ -136,7 +135,7 @@ export const updateSalaryService = async (
 
     return {
       statusCode: 200,
-      message: "Salary record updated successfully",
+      message: "success",
       data: updated,
     };
   } catch (err: any) {
@@ -169,7 +168,7 @@ export const deleteSalaryService = async (
 
     return {
       statusCode: 200,
-      message: "Salary record deleted successfully",
+      message: "success",
       data: null,
     };
   } catch (err: any) {
@@ -183,34 +182,59 @@ export const deleteSalaryService = async (
 };
 
 export const getSalarySummaryService = async (
-  month?: string,
   farm?: string,
+  search?: string,
 ): Promise<ServiceResponse> => {
   const where: any = {};
 
-  if (month) where.month = month;
   if (farm) where.farm = farm;
-
+  if (search) {
+    where.OR = [
+      { employeeName: { contains: search, mode: "insensitive" } },
+      { designation: { contains: search, mode: "insensitive" } },
+      { remarks: { contains: search, mode: "insensitive" } },
+    ];
+  }
   try {
     const byFarm = await prisma.salary.groupBy({
       by: ["farm"],
       where,
-      _sum: { total: true, advance: true, salaryAmount: true },
+      _sum: {
+        total: true,
+        advance: true,
+        salaryAmount: true,
+      },
+      orderBy: {
+        _sum: {
+          total: "desc",
+        },
+      },
     });
 
     const total = await prisma.salary.aggregate({
       where,
-      _sum: { total: true, advance: true, salaryAmount: true },
+      _sum: {
+        total: true,
+        advance: true,
+        salaryAmount: true,
+      },
     });
 
     return {
       statusCode: 200,
-      message: "Salary summary generated",
+      message: "success",
       data: {
         totalPaid: total._sum.total ?? 0,
         totalAdvance: total._sum.advance ?? 0,
         totalSalaryAmount: total._sum.salaryAmount ?? 0,
-        byFarm,
+        byFarm: byFarm.map((group) => ({
+          farm: group.farm,
+          _sum: {
+            total: group._sum.total ?? null,
+            advance: group._sum.advance ?? null,
+            salaryAmount: group._sum.salaryAmount ?? null,
+          },
+        })),
       },
     };
   } catch (err: any) {
