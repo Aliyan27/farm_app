@@ -1,5 +1,6 @@
 import prisma from "../../utils/Prisma";
 import { format } from "date-fns";
+import { getDateRangeWhere } from "../../utils/UtilityFunctions";
 
 export interface ServiceResponse<T = any> {
   statusCode: number;
@@ -45,7 +46,7 @@ export const getEggProductionSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Egg production summary generated",
+      message: "success",
       data: {
         totalProduced: total._sum.chickenEggs ?? 0,
         totalSold: total._sum.eggsSold ?? 0,
@@ -104,7 +105,7 @@ export const getFeedPurchaseSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Feed purchases summary generated",
+      message: "success",
       data: {
         totalBags: total._sum.bags ?? 0,
         totalDebit: total._sum.debit ?? 0,
@@ -126,28 +127,6 @@ export const getFeedPurchaseSummaryService = async (
   }
 };
 
-// Common utility – now takes the field name as parameter so it's reusable
-const getDateRangeWhere = (
-  fieldName: string, // ← new: pass the actual field name
-  startDate?: string,
-  endDate?: string,
-) => {
-  const where: any = {};
-  if (startDate || endDate) {
-    where[fieldName] = {};
-    if (startDate) where[fieldName].gte = new Date(startDate);
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setDate(end.getDate() + 1);
-      where[fieldName].lt = end;
-    }
-  }
-  return where;
-};
-
-// ────────────────────────────────────────────────
-// Expenses Summary – use "expenseDate"
-// ────────────────────────────────────────────────
 export const getExpenseSummaryService = async (
   farm?: string,
   startDate?: string,
@@ -169,7 +148,6 @@ export const getExpenseSummaryService = async (
       _sum: { expenseCost: true },
     });
 
-    // Graph data: monthly totals
     const monthlyExpenses = await prisma.expense
       .groupBy({
         by: ["expenseDate"],
@@ -185,7 +163,7 @@ export const getExpenseSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Expenses summary generated",
+      message: "success",
       data: {
         totalExpenses: total._sum.expenseCost ?? 0,
         byHead: expenses,
@@ -204,9 +182,6 @@ export const getExpenseSummaryService = async (
   }
 };
 
-// ────────────────────────────────────────────────
-// Egg Sale Summary – use "saleDate"
-// ────────────────────────────────────────────────
 export const getEggSaleSummaryService = async (
   farm?: string,
   startDate?: string,
@@ -253,7 +228,7 @@ export const getEggSaleSummaryService = async (
 
     return {
       statusCode: 200,
-      message: "Egg sales summary generated",
+      message: "success",
       data: {
         totalEggsSold: total._sum.eggsSold ?? 0,
         totalRevenue: total._sum.totalAmount ?? 0,

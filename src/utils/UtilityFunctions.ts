@@ -64,3 +64,21 @@ export const getCustomizedError = (error: any, res: Response) => {
     ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
   });
 };
+
+export const getDateRangeWhere = (
+  fieldName: string,
+  startDate?: string,
+  endDate?: string,
+) => {
+  const where: any = {};
+  if (startDate || endDate) {
+    where[fieldName] = {};
+    if (startDate) where[fieldName].gte = new Date(startDate);
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setDate(end.getDate() + 1);
+      where[fieldName].lt = end;
+    }
+  }
+  return where;
+};

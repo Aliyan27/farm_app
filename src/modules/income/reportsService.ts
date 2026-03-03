@@ -1,4 +1,6 @@
+import { scheduler } from "timers/promises";
 import prisma from "../../utils/Prisma";
+import { getSalarySummaryService } from "../salaries/salariesService";
 
 interface IncomeStatementInput {
   startDate?: string;
@@ -127,6 +129,7 @@ export const getIncomeStatementService = async (
       "MEETING_REFRESHMENT",
       "TRAVELLING_LOGISTICS",
       "MISCELLANEOUS",
+      "SALARIES_PAYMENTS",
     ];
 
     const opExpenses = await prisma.expense.groupBy({
@@ -194,6 +197,12 @@ export const getIncomeStatementService = async (
       operatingExpenses.total += cost;
     });
 
+    let response = getSalarySummaryService(farm);
+    operatingExpenses.salariesPayments = (
+      await response
+    ).data?.totalSalaryAmount;
+    operatingExpenses.total += operatingExpenses.salariesPayments;
+
     const totalExpenses = cogs.total + operatingExpenses.total;
 
     const netIncome = totalRevenue - totalExpenses;
@@ -217,7 +226,7 @@ export const getIncomeStatementService = async (
 
     return {
       statusCode: 200,
-      message: "Income statement generated",
+      message: "success",
       data: result,
     };
   } catch (err: any) {
