@@ -1,6 +1,16 @@
 import { Request, Response } from "express";
-import { signupSchema, signinSchema } from "./auth.validation";
-import { signupService, signinService } from "./authService";
+import {
+  signupSchema,
+  signinSchema,
+  forgotSchema,
+  resetSchema,
+} from "./auth.validation";
+import {
+  signupService,
+  signinService,
+  forgotPasswordService,
+  verifyOTPService,
+} from "./authService";
 import { getCustomizedError } from "../../utils/UtilityFunctions";
 
 /**
@@ -183,6 +193,26 @@ export const signinController = async (req: Request, res: Response) => {
     return res.status(result.statusCode).json({
       message: result.message,
     });
+  } catch (error: any) {
+    return getCustomizedError(error, res);
+  }
+};
+
+export const forgotPasswordController = async (req: Request, res: Response) => {
+  try {
+    const { email } = forgotSchema.parse(req.body);
+    const result = await forgotPasswordService(email);
+    res.status(result.statusCode).json(result);
+  } catch (error: any) {
+    return getCustomizedError(error, res);
+  }
+};
+
+export const verifyOTPController = async (req: Request, res: Response) => {
+  try {
+    const { otp, email } = resetSchema.parse(req.body);
+    const result = await verifyOTPService(email, otp);
+    res.status(result.statusCode).json(result);
   } catch (error: any) {
     return getCustomizedError(error, res);
   }

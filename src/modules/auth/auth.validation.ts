@@ -10,3 +10,12 @@ export const signinSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(1, { message: "Password is required" }),
 });
+
+export const forgotSchema = z.object({
+  email: z.string().email(),
+});
+
+export const resetSchema = z.object({
+  otp: z.string(),
+  email: z.string(),
+});

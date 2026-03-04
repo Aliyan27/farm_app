@@ -7,15 +7,20 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-model user{
-    id Int @id @default(autoincrement())
-    name String
-    email String @unique
-    password String
-    role String @default("user")
-    isEmailVerified Boolean @default(false)
-    createdAt DateTime @default(now())
-    }
+
+model user {
+  id                  Int       @id @default(autoincrement())
+  name                String
+  email               String    @unique
+  password            String
+  role                String    @default("user")
+  isEmailVerified     Boolean   @default(true)
+  otp                 String?
+  otpExpires          DateTime?
+  otp          String?   // ← for password reset
+  otpExpires        DateTime? // ← expiration
+  createdAt           DateTime  @default(now())
+}
 
 enum FarmUnit {
   KAASI_19
@@ -46,7 +51,6 @@ enum ExpenseHead {
   PROFESSIONAL_FEE
   MISCELLANEOUS
   SHAREHOLDERS_DIVIDEND
-  SALARIES_PAYMENTS
   OTHER
 }
 
