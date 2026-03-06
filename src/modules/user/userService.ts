@@ -75,6 +75,8 @@ export const updateProfileService = async (
       where: { id: userId },
       data: {
         name: data.name ? data.name.trim() : undefined,
+        email: data.email,
+        isEmailVerified: false,
       },
       select: {
         id: true,
@@ -88,7 +90,7 @@ export const updateProfileService = async (
 
     return {
       statusCode: 200,
-      message: "Profile updated successfully",
+      message: "success",
       data: updatedUser,
     };
   } catch (err: any) {
@@ -110,64 +112,7 @@ export const updateProfileService = async (
   }
 };
 
-export const changMailService = async (
-  data: z.infer<typeof changeEmailSchema>,
-  userId: number,
-): Promise<ServiceResponse> => {
-  try {
-    // Optional: check if user exists
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return {
-        statusCode: 404,
-        message: "User not found",
-        data: null,
-      };
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        name: data.email ? data.email.trim() : undefined,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isEmailVerified: true,
-        createdAt: true,
-      },
-    });
-
-    return {
-      statusCode: 200,
-      message: "Profile updated successfully",
-      data: updatedUser,
-    };
-  } catch (err: any) {
-    console.error("[updateProfileService] Error:", err);
-
-    if (err.code === "P2025") {
-      return {
-        statusCode: 404,
-        message: "User not found",
-        data: null,
-      };
-    }
-
-    return {
-      statusCode: 500,
-      message: "Failed to update profile",
-      data: null,
-    };
-  }
-};
-
-export const sendVerificationEmail = async (
+export const sendVerificationEmailService = async (
   email: string,
 ): Promise<ServiceResponse<null>> => {
   try {
@@ -182,7 +127,7 @@ export const sendVerificationEmail = async (
       },
     });
 
-    sendOTP(email, otp);
+    await sendOTP(email, otp);
 
     return {
       statusCode: 200,
@@ -199,13 +144,15 @@ export const sendVerificationEmail = async (
   }
 };
 
-export const verifyEmail = async (
-  token: string,
+export const verifyEmailService = async (
+  email: string,
+  otp: string,
 ): Promise<ServiceResponse<null>> => {
   try {
     const user = await prisma.user.findFirst({
       where: {
-        otp: token,
+        email: email,
+        otp: otp,
         otpExpires: { gt: new Date() },
       },
     });

@@ -1,9 +1,5 @@
+import { apiKey, brevoBaseUrl, senderEmail, senderName } from "../../utils/env";
 export const sendOTP = async (email: string, otp: string) => {
-  const apiKey = process.env.BREVO_API_KEY;
-  const senderName = process.env.BREVO_SENDER_NAME;
-  const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const brevoBaseUrl = process.env.BREVO_BASE_URL;
-
   if (!apiKey) throw new Error("BREVO_API_KEY missing");
   if (!senderName) throw new Error("BREVO_SENDER_NAME missing");
   if (!senderEmail) throw new Error("BREVO_SENDER_EMAIL missing");
@@ -19,7 +15,7 @@ export const sendOTP = async (email: string, otp: string) => {
     htmlContent: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2>Password Reset Request</h2>
-        <p>You requested to reset your password. Click the button below:</p>
+        <p>You requested to reset your password.</p>
         <p style="margin: 30px 0; text-align: center;">
           ${otp}
         </p>

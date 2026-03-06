@@ -163,9 +163,9 @@ export const getIncomeStatementService = async (
         case "UTILITIES":
           operatingExpenses.utilities = cost;
           break;
-        case "SALARIES_PAYMENTS":
-          operatingExpenses.salariesPayments = cost;
-          break;
+        // case "SALARIES_PAYMENTS":
+        //   operatingExpenses.salariesPayments = cost;
+        //   break;
         case "MESS":
           operatingExpenses.mess = cost;
           break;

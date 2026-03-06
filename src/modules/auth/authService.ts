@@ -17,12 +17,10 @@ export const signupService = async (data: typeof signupSchema._output) => {
     },
   });
 
-  const { password, ...safeUser } = user;
-
   return {
     statusCode: 201,
     message: "success",
-    data: safeUser,
+    data: null,
   };
 };
 
@@ -49,6 +47,7 @@ export const signinService = async (data: typeof signinSchema._output) => {
     };
   }
 
+  const { password, otp, otpExpires, ...safeUser } = user;
   const token = signToken({
     id: user.id,
     email: user.email,
@@ -58,7 +57,7 @@ export const signinService = async (data: typeof signinSchema._output) => {
   return {
     statusCode: 200,
     message: "success",
-    data: { token },
+    data: { token, user: safeUser },
   };
 };
 

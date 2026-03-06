@@ -1,8 +1,19 @@
 import { Response } from "express";
 import { AuthRequest } from "../../middlewares/authMiddleware";
-import { changePasswordSchema, updateProfileSchema } from "./user.validation";
-import { changePasswordService, updateProfileService } from "./userService";
+import {
+  changeEmailSchema,
+  changePasswordSchema,
+  updateProfileSchema,
+  verifyEmailSchema,
+} from "./user.validation";
+import {
+  changePasswordService,
+  sendVerificationEmailService,
+  updateProfileService,
+  verifyEmailService,
+} from "./userService";
 import { getCustomizedError } from "../../utils/UtilityFunctions";
+import { error } from "node:console";
 
 /**
  * @swagger
@@ -180,5 +191,113 @@ export const updateProfileController = async (
     });
   } catch (error: any) {
     return getCustomizedError(error, res);
+  }
+};
+
+/**
+ * @swagger
+ * /user/send-verification-email:
+ *   post:
+ *     summary: Send OTP to verify email address
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: OTP sent successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ServiceResponse'
+ *       400:
+ *         description: Invalid email
+ *       500:
+ *         description: Failed to send OTP
+ */
+export const sendVerificationEmailController = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const { email } = changeEmailSchema.parse(req.body);
+
+    if (!email || typeof email !== "string") {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const result = await sendVerificationEmailService(
+      email.trim().toLowerCase(),
+    );
+
+    return res.status(result.statusCode).json({
+      message: result.message,
+      ...(result.data !== null && { data: result?.data }),
+    });
+  } catch (err: any) {
+    return res
+      .status(500)
+      .json({ message: "Failed to send verification email" });
+  }
+};
+
+/**
+ * @swagger
+ * /user/verify-email:
+ *   post:
+ *     summary: Verify email using OTP
+ *     tags: [User]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: 6-digit OTP code
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ServiceResponse'
+ *       400:
+ *         description: Invalid or expired OTP
+ *       500:
+ *         description: Server error
+ */
+export const verifyEmailController = async (
+  req: AuthRequest,
+  res: Response,
+) => {
+  try {
+    const { email, otp } = verifyEmailSchema.parse(req.body);
+
+    if (!otp || typeof otp !== "string") {
+      return res.status(400).json({ message: "Token is required" });
+    }
+
+    const result = await verifyEmailService(email, otp);
+
+    return res.status(result.statusCode).json({
+      message: result.message,
+      ...(result.data !== null && { data: result.data }),
+    });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Verification failed" });
   }
 };

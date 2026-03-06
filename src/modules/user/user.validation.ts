@@ -1,4 +1,4 @@
-import z from "zod";
+import z, { email } from "zod";
 
 export const changePasswordSchema = z.object({
   newPassword: z
@@ -18,9 +18,15 @@ export const changePasswordSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  name: z.string().min(3, "Name must be at least 3 characters"),
+  name: z.string().min(3, "Name must be at least 3 characters").optional(),
+  email: z.string().email("Invalid email address"),
 });
 
 export const changeEmailSchema = z.object({
-  email: z.string().email("Invalid email address").optional(),
+  email: z.string().email("Invalid email address"),
+});
+
+export const verifyEmailSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  otp: z.string().min(6, "OTP must be 6 characters"),
 });

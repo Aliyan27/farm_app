@@ -14,9 +14,7 @@ model user {
   email               String    @unique
   password            String
   role                String    @default("user")
-  isEmailVerified     Boolean   @default(true)
-  otp                 String?
-  otpExpires          DateTime?
+  isEmailVerified     Boolean   @default(false)
   otp          String?   // ← for password reset
   otpExpires        DateTime? // ← expiration
   createdAt           DateTime  @default(now())
