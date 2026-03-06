@@ -13,6 +13,7 @@ export const signupService = async (data: typeof signupSchema._output) => {
     data: {
       name: data.name.trim(),
       email: data.email.toLowerCase().trim(),
+      role: data.role,
       password: hashedPassword,
     },
   });
